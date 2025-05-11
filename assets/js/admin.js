@@ -28,7 +28,9 @@ jQuery(document).ready(function($) {
                     var options = '<option value="">Select a contract</option>';
                     if (Array.isArray(response.data)) {
                         response.data.forEach(function(contract) {
-                            options += '<option value="' + contract.ID + '">' + contract.ContractTitle + '</option>';
+                            // Decode the Persian text
+                            var contractTitle = decodeURIComponent(escape(contract.ContractTitle));
+                            options += '<option value="' + contract.ID + '">' + contractTitle + ' - ' + contract.ServiceName + '</option>';
                         });
                     }
                     $('#dekapost_contract_id').html(options);
