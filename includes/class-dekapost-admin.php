@@ -19,6 +19,40 @@ class Dekapost_Admin {
         // Add AJAX handlers
         add_action('wp_ajax_dekapost_upload_excel', array($this, 'handle_excel_upload'));
         add_action('wp_ajax_dekapost_save_parcels', array($this, 'handle_save_parcels'));
+        
+        // Register settings
+        add_action('admin_init', array($this, 'register_settings'));
+    }
+
+    public function register_settings() {
+        register_setting(
+            'dekapost_shipping_settings',
+            'dekapost_shipping_settings',
+            array($this, 'validate_settings')
+        );
+    }
+
+    public function validate_settings($input) {
+        $validated = array();
+        
+        // Validate username
+        $validated['api_username'] = sanitize_text_field($input['api_username']);
+        
+        // Validate password
+        $validated['api_password'] = sanitize_text_field($input['api_password']);
+        
+        // If credentials changed, clear token
+        $current_settings = get_option('dekapost_shipping_settings');
+        if ($current_settings['api_username'] !== $validated['api_username'] || 
+            $current_settings['api_password'] !== $validated['api_password']) {
+            $validated['api_token'] = '';
+            $validated['api_token_expiry'] = '';
+        } else {
+            $validated['api_token'] = $current_settings['api_token'];
+            $validated['api_token_expiry'] = $current_settings['api_token_expiry'];
+        }
+        
+        return $validated;
     }
 
     public function add_admin_menu() {
