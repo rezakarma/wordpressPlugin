@@ -107,7 +107,43 @@ class Dekapost_API {
     }
 
     public function get_cities() {
-        return $this->make_request('/GetCityForContract');
+        // First ensure we have a valid token
+        $token = $this->get_token();
+        if (!$token) {
+            return array(
+                'status' => false,
+                'message' => 'Authentication failed. Please check your credentials.'
+            );
+        }
+
+        $response = wp_remote_get($this->api_url . '/GetCityForContract', array(
+            'headers' => array(
+                'Authorization' => 'Bearer ' . $token,
+                'Referer' => 'https://services.dekapost.ir/'
+            )
+        ));
+
+        if (is_wp_error($response)) {
+            return array(
+                'status' => false,
+                'message' => $response->get_error_message()
+            );
+        }
+
+        $body = wp_remote_retrieve_body($response);
+        $data = json_decode($body, true);
+
+        if (wp_remote_retrieve_response_code($response) !== 200) {
+            return array(
+                'status' => false,
+                'message' => isset($data['message']) ? $data['message'] : 'Failed to get cities'
+            );
+        }
+
+        return array(
+            'status' => true,
+            'data' => $data
+        );
     }
 
     public function get_contracts($city_id) {

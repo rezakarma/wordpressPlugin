@@ -106,12 +106,20 @@ class Dekapost_Admin {
         // Get cities from API
         $cities_response = $this->api->get_cities();
         
-        if ($cities_response['status'] && !empty($cities_response['data']['addressData'])) {
+        if ($cities_response['status'] && isset($cities_response['data']['addressData'])) {
             // Store cities in WordPress options
             update_option('dekapost_cities', $cities_response['data']['addressData']);
             $cities = $cities_response['data']['addressData'];
         } else {
             $cities = array();
+            if (!$cities_response['status']) {
+                add_settings_error(
+                    'dekapost_shipping',
+                    'cities_error',
+                    $cities_response['message'] ?? 'Failed to load cities. Please check your API credentials.',
+                    'error'
+                );
+            }
         }
         
         // Get contract properties

@@ -50,15 +50,19 @@ if (!defined('ABSPATH')) {
                     if (!empty($cities)) {
                         foreach ($cities as $city) {
                             printf(
-                                '<option value="%s" %s>%s</option>',
+                                '<option value="%s" %s>%s - %s</option>',
                                 esc_attr($city['cityID']),
                                 selected(get_option('dekapost_city_id'), $city['cityID'], false),
-                                esc_html($city['cityName'])
+                                esc_html($city['cityName']),
+                                esc_html($city['stateName'])
                             );
                         }
                     }
                     ?>
                 </select>
+                <?php if (empty($cities)): ?>
+                    <p class="description">No cities available. Please check your API credentials.</p>
+                <?php endif; ?>
             </div>
 
             <!-- Contract Selection -->
