@@ -102,11 +102,11 @@ class Dekapost_Admin {
         // Get settings
         $settings = get_option('dekapost_shipping_settings');
         
-        // Get states
-        $states = $this->api->get_states();
+        // Get cities
+        $cities = $this->api->get_cities();
         
         // Get contract properties
-        $contracts = $this->api->get_contract_properties();
+        $contracts = $this->api->get_contracts(0); // Default to 0 for initial load
         
         // Include admin template
         include DEKAPOST_SHIPPING_PLUGIN_DIR . 'templates/admin-page.php';

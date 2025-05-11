@@ -46,10 +46,10 @@ if (!defined('ABSPATH')) {
                 <label for="city"><?php echo esc_html__('Select City', 'dekapost-shipping'); ?></label>
                 <select id="city" name="city">
                     <option value=""><?php echo esc_html__('Select a city', 'dekapost-shipping'); ?></option>
-                    <?php if ($states && is_array($states)) : ?>
-                        <?php foreach ($states as $state) : ?>
-                            <option value="<?php echo esc_attr($state['ID']); ?>">
-                                <?php echo esc_html($state['Name']); ?>
+                    <?php if ($cities && isset($cities['addressData']) && is_array($cities['addressData'])) : ?>
+                        <?php foreach ($cities['addressData'] as $city) : ?>
+                            <option value="<?php echo esc_attr($city['cityID']); ?>">
+                                <?php echo esc_html($city['cityName']); ?>
                             </option>
                         <?php endforeach; ?>
                     <?php endif; ?>
