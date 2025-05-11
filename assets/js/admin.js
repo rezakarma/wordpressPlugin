@@ -3,13 +3,9 @@ jQuery(document).ready(function($) {
     $('#dekapost_city_id').on('change', function() {
         var cityId = $(this).val();
         if (cityId) {
-            // Show contract field and load contracts
-            $('#dekapost_contract_id').prop('disabled', false);
             loadContracts(cityId);
         } else {
-            // Hide and reset contract field
-            $('#dekapost_contract_id').prop('disabled', true)
-                .html('<option value="">Select a city first</option>');
+            $('#dekapost_contract_id').html('<option value="">Select a city first</option>');
         }
     });
 
@@ -31,14 +27,11 @@ jQuery(document).ready(function($) {
                 if (response.success && response.data) {
                     var options = '<option value="">Select a contract</option>';
                     response.data.forEach(function(contract) {
-                        options += '<option value="' + contract.id + '">' + contract.name + '</option>';
+                        options += '<option value="' + contract.ID + '">' + contract.ContractTitle + '</option>';
                     });
                     $('#dekapost_contract_id').html(options);
                 } else {
                     $('#dekapost_contract_id').html('<option value="">No contracts found</option>');
-                    if (response.data && response.data.message) {
-                        console.error('Contract loading error:', response.data.message);
-                    }
                 }
             },
             error: function(xhr, status, error) {
