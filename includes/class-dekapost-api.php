@@ -110,7 +110,7 @@ class Dekapost_API {
     }
 
     public function get_contracts($city_id) {
-        if (!$this->is_logged_in()) {
+        if (!$this->is_token_valid()) {
             return array(
                 'status' => false,
                 'message' => 'Not logged in'
