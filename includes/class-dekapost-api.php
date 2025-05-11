@@ -181,10 +181,10 @@ class Dekapost_API {
         $body = wp_remote_retrieve_body($response);
         $data = json_decode($body, true);
 
-        if ($response_code === 200 && isset($data['status']) && $data['status'] === true) {
+        if ($response_code === 200 && isset($data['status']) && $data['status'] === 1) {
             return array(
                 'status' => true,
-                'data' => $data
+                'data' => $data['data'] ?? array()
             );
         }
 
