@@ -54,7 +54,7 @@ class Dekapost_API {
                 return false;
             }
 
-            $body = json_decode(wp_remote_retrieve_body($response), true);
+            $body = wp_remote_retrieve_body($response);
             if (!empty($body)) {
                 // Decode JWT to get expiry
                 $token_parts = explode('.', $body);
@@ -102,16 +102,6 @@ class Dekapost_API {
         }
 
         $body = json_decode(wp_remote_retrieve_body($response), true);
-        
-        // Check if response contains error message
-        if (isset($body['message']) && !empty($body['message'])) {
-            return array(
-                'status' => isset($body['status']) ? $body['status'] : false,
-                'message' => $body['message'],
-                'data' => isset($body['data']) ? $body['data'] : null
-            );
-        }
-
         return $body;
     }
 
@@ -120,9 +110,40 @@ class Dekapost_API {
     }
 
     public function get_contracts($city_id) {
-        return $this->make_request('/GetContractPropertiesNodes', 'POST', array(
-            'cityID' => intval($city_id)
+        if (!$this->is_logged_in()) {
+            return array(
+                'status' => false,
+                'message' => 'Not logged in'
+            );
+        }
+
+        $response = wp_remote_get($this->api_url . '/contracts/' . $city_id, array(
+            'headers' => array(
+                'Authorization' => 'Bearer ' . $this->token
+            )
         ));
+
+        if (is_wp_error($response)) {
+            return array(
+                'status' => false,
+                'message' => $response->get_error_message()
+            );
+        }
+
+        $body = wp_remote_retrieve_body($response);
+        $data = json_decode($body, true);
+
+        if (wp_remote_retrieve_response_code($response) !== 200) {
+            return array(
+                'status' => false,
+                'message' => isset($data['message']) ? $data['message'] : 'Failed to get contracts'
+            );
+        }
+
+        return array(
+            'status' => true,
+            'data' => $data
+        );
     }
 
     public function calculate_price($parcels_data) {

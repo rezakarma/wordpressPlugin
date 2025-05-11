@@ -57,22 +57,23 @@ if (!defined('ABSPATH')) {
             </div>
 
             <!-- Contract Selection -->
-            <div class="form-field">
+            <div class="form-field" id="contract-field" style="display: none;">
                 <label for="contract"><?php echo esc_html__('Select Contract', 'dekapost-shipping'); ?></label>
-                <select id="contract" name="contract">
+                <select id="contract" name="contract" disabled>
                     <option value=""><?php echo esc_html__('Select a contract', 'dekapost-shipping'); ?></option>
-                    <?php if ($contracts && is_array($contracts)) : ?>
-                        <?php foreach ($contracts as $contract) : ?>
-                            <option value="<?php echo esc_attr($contract['ID']); ?>">
-                                <?php echo esc_html($contract['ContractTitle']); ?>
-                            </option>
-                        <?php endforeach; ?>
-                    <?php endif; ?>
+                </select>
+            </div>
+
+            <!-- Payment Type Selection -->
+            <div class="form-field" id="payment-type-field" style="display: none;">
+                <label for="payment-type"><?php echo esc_html__('Select Payment Type', 'dekapost-shipping'); ?></label>
+                <select id="payment-type" name="payment-type" disabled>
+                    <option value=""><?php echo esc_html__('Select a payment type', 'dekapost-shipping'); ?></option>
                 </select>
             </div>
 
             <!-- Excel Upload -->
-            <div class="form-field">
+            <div class="form-field" id="excel-upload-field" style="display: none;">
                 <label for="excel_file"><?php echo esc_html__('Upload Excel File', 'dekapost-shipping'); ?></label>
                 <input type="file" id="excel_file" name="excel_file" accept=".xlsx,.xls">
                 <button type="button" class="button" id="upload-excel">
@@ -114,4 +115,187 @@ if (!defined('ABSPATH')) {
             </div>
         </div>
     </div>
-</div> 
+</div>
+
+<script>
+jQuery(document).ready(function($) {
+    // City selection change
+    $('#city').on('change', function() {
+        var cityId = $(this).val();
+        if (cityId) {
+            // Show contract field
+            $('#contract-field').show();
+            $('#contract').prop('disabled', false);
+            
+            // Load contracts
+            $.ajax({
+                url: ajaxurl,
+                type: 'POST',
+                data: {
+                    action: 'dekapost_get_contracts',
+                    city_id: cityId,
+                    nonce: dekapostShipping.nonce
+                },
+                success: function(response) {
+                    if (response.success) {
+                        var contracts = response.data;
+                        var $contract = $('#contract');
+                        $contract.empty().append('<option value="">Select a contract</option>');
+                        
+                        contracts.forEach(function(contract) {
+                            $contract.append(
+                                $('<option></option>')
+                                    .val(contract.ID)
+                                    .text(contract.ContractTitle)
+                                    .data('pay-type', contract.payType)
+                            );
+                        });
+                    } else {
+                        alert(response.data.message || 'Failed to load contracts');
+                    }
+                }
+            });
+        } else {
+            // Hide and reset contract field
+            $('#contract-field').hide();
+            $('#contract').prop('disabled', true).empty();
+            $('#payment-type-field').hide();
+            $('#payment-type').prop('disabled', true).empty();
+            $('#excel-upload-field').hide();
+        }
+    });
+
+    // Contract selection change
+    $('#contract').on('change', function() {
+        var $selected = $(this).find('option:selected');
+        var payType = $selected.data('pay-type');
+        
+        if (payType) {
+            // Show payment type field
+            $('#payment-type-field').show();
+            $('#payment-type').prop('disabled', false);
+            
+            // Parse and populate payment types
+            var payTypes = JSON.parse(payType).payTypeList;
+            var $paymentType = $('#payment-type');
+            $paymentType.empty().append('<option value="">Select a payment type</option>');
+            
+            payTypes.forEach(function(type) {
+                $paymentType.append(
+                    $('<option></option>')
+                        .val(type.payTypeID)
+                        .text(type.payTypeName)
+                );
+            });
+        } else {
+            // Hide and reset payment type field
+            $('#payment-type-field').hide();
+            $('#payment-type').prop('disabled', true).empty();
+            $('#excel-upload-field').hide();
+        }
+    });
+
+    // Payment type selection change
+    $('#payment-type').on('change', function() {
+        if ($(this).val()) {
+            $('#excel-upload-field').show();
+        } else {
+            $('#excel-upload-field').hide();
+        }
+    });
+
+    // Excel upload
+    $('#upload-excel').on('click', function() {
+        var file = $('#excel_file')[0].files[0];
+        if (!file) {
+            alert('Please select a file first');
+            return;
+        }
+
+        var formData = new FormData();
+        formData.append('action', 'dekapost_upload_excel');
+        formData.append('excel_file', file);
+        formData.append('nonce', dekapostShipping.nonce);
+        formData.append('city_id', $('#city').val());
+        formData.append('contract_id', $('#contract').val());
+        formData.append('payment_type_id', $('#payment-type').val());
+
+        $.ajax({
+            url: ajaxurl,
+            type: 'POST',
+            data: formData,
+            processData: false,
+            contentType: false,
+            success: function(response) {
+                if (response.success) {
+                    // Show results table
+                    $('.results-table-container').show();
+                    
+                    // Populate results
+                    var $tbody = $('#parcels-results');
+                    $tbody.empty();
+                    
+                    response.data.data.forEach(function(parcel) {
+                        var row = $('<tr></tr>');
+                        row.append('<td><input type="checkbox" class="parcel-checkbox"></td>');
+                        row.append('<td>' + parcel.weight + '</td>');
+                        row.append('<td>' + parcel.sourceCity + '</td>');
+                        row.append('<td>' + parcel.destCity + '</td>');
+                        row.append('<td>' + parcel.totalAmount + '</td>');
+                        row.append('<td>' + parcel.message + '</td>');
+                        $tbody.append(row);
+                    });
+                } else {
+                    alert(response.data.message || 'Failed to process Excel file');
+                }
+            }
+        });
+    });
+
+    // Select all parcels
+    $('#select-all-parcels').on('change', function() {
+        $('.parcel-checkbox').prop('checked', $(this).prop('checked'));
+    });
+
+    // Submit selected parcels
+    $('#submit-parcels').on('click', function() {
+        var selectedParcels = [];
+        $('.parcel-checkbox:checked').each(function() {
+            var index = $(this).closest('tr').index();
+            selectedParcels.push(parcelsData[index]);
+        });
+
+        if (selectedParcels.length === 0) {
+            alert('Please select at least one parcel');
+            return;
+        }
+
+        $.ajax({
+            url: ajaxurl,
+            type: 'POST',
+            data: {
+                action: 'dekapost_save_parcels',
+                parcels_data: JSON.stringify(selectedParcels),
+                nonce: dekapostShipping.nonce
+            },
+            success: function(response) {
+                if (response.success) {
+                    alert('Parcels saved successfully');
+                    $('.results-table-container').hide();
+                    $('#excel_file').val('');
+                } else {
+                    alert(response.data.message || 'Failed to save parcels');
+                }
+            }
+        });
+    });
+
+    // Delete selected parcels
+    $('#delete-selected').on('click', function() {
+        $('.parcel-checkbox:checked').closest('tr').remove();
+        if ($('.parcel-checkbox').length === 0) {
+            $('.results-table-container').hide();
+        }
+    });
+});
+</script> 

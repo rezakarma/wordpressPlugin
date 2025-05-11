@@ -19,6 +19,7 @@ class Dekapost_Admin {
         // Add AJAX handlers
         add_action('wp_ajax_dekapost_upload_excel', array($this, 'handle_excel_upload'));
         add_action('wp_ajax_dekapost_save_parcels', array($this, 'handle_save_parcels'));
+        add_action('wp_ajax_dekapost_get_contracts', array($this, 'handle_get_contracts'));
         
         // Register settings
         add_action('admin_init', array($this, 'register_settings'));
@@ -283,6 +284,34 @@ class Dekapost_Admin {
         } else {
             wp_send_json_error(array(
                 'message' => $response['message'] ?? 'Failed to save parcels'
+            ));
+        }
+    }
+
+    public function handle_get_contracts() {
+        check_ajax_referer('dekapost-shipping-nonce', 'nonce');
+
+        if (!current_user_can('manage_options')) {
+            wp_send_json_error(array(
+                'message' => 'Unauthorized access'
+            ));
+        }
+
+        $city_id = isset($_POST['city_id']) ? intval($_POST['city_id']) : 0;
+        
+        if (empty($city_id)) {
+            wp_send_json_error(array(
+                'message' => 'City ID is required'
+            ));
+        }
+
+        $response = $this->api->get_contracts($city_id);
+        
+        if ($response['status']) {
+            wp_send_json_success($response['data']);
+        } else {
+            wp_send_json_error(array(
+                'message' => $response['message'] ?? 'Failed to get contracts'
             ));
         }
     }
