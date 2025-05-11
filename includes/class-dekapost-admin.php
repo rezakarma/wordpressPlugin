@@ -146,6 +146,9 @@ class Dekapost_Admin {
 
         $file = $_FILES['excel_file'];
         
+        // Debug file information
+        error_log('File upload details: ' . print_r($file, true));
+        
         // Check file type
         $file_type = wp_check_filetype($file['name']);
         if (!in_array($file_type['ext'], array('xlsx', 'xls'))) {
@@ -154,20 +157,55 @@ class Dekapost_Admin {
             ));
         }
 
+        // Check for upload errors
+        if ($file['error'] !== UPLOAD_ERR_OK) {
+            $error_message = 'File upload error: ';
+            switch ($file['error']) {
+                case UPLOAD_ERR_INI_SIZE:
+                    $error_message .= 'The uploaded file exceeds the upload_max_filesize directive in php.ini';
+                    break;
+                case UPLOAD_ERR_FORM_SIZE:
+                    $error_message .= 'The uploaded file exceeds the MAX_FILE_SIZE directive in the HTML form';
+                    break;
+                case UPLOAD_ERR_PARTIAL:
+                    $error_message .= 'The uploaded file was only partially uploaded';
+                    break;
+                case UPLOAD_ERR_NO_FILE:
+                    $error_message .= 'No file was uploaded';
+                    break;
+                case UPLOAD_ERR_NO_TMP_DIR:
+                    $error_message .= 'Missing a temporary folder';
+                    break;
+                case UPLOAD_ERR_CANT_WRITE:
+                    $error_message .= 'Failed to write file to disk';
+                    break;
+                case UPLOAD_ERR_EXTENSION:
+                    $error_message .= 'A PHP extension stopped the file upload';
+                    break;
+                default:
+                    $error_message .= 'Unknown upload error';
+            }
+            wp_send_json_error(array('message' => $error_message));
+        }
+
         // Load PhpSpreadsheet
         require_once DEKAPOST_SHIPPING_PLUGIN_DIR . 'vendor/autoload.php';
 
         try {
+            error_log('Attempting to load Excel file: ' . $file['tmp_name']);
+            
             $spreadsheet = \PhpOffice\PhpSpreadsheet\IOFactory::load($file['tmp_name']);
             $worksheet = $spreadsheet->getActiveSheet();
             $data = $worksheet->toArray();
+
+            error_log('Excel data loaded. Number of rows: ' . count($data));
 
             // Skip header row and process data
             array_shift($data);
             
             // Process data based on column order
             $parcels_data = array();
-            foreach ($data as $row) {
+            foreach ($data as $index => $row) {
                 if (count($row) >= 6) { // Ensure we have enough columns
                     $parcel = array(
                         'sourceCity' => $row[0] ?? '',
@@ -210,8 +248,12 @@ class Dekapost_Admin {
                         'serialNo' => $row[37] ?? ''
                     );
                     $parcels_data[] = $parcel;
+                } else {
+                    error_log('Row ' . ($index + 2) . ' skipped: insufficient columns');
                 }
             }
+
+            error_log('Processed ' . count($parcels_data) . ' parcels');
 
             // Process data for API
             $processed_data = $this->api->process_excel_data($parcels_data);
@@ -263,6 +305,7 @@ class Dekapost_Admin {
                 ));
             }
         } catch (Exception $e) {
+            error_log('Excel processing error: ' . $e->getMessage());
             wp_send_json_error(array(
                 'message' => 'Error processing Excel file: ' . $e->getMessage()
             ));

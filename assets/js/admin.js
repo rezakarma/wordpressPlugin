@@ -139,4 +139,66 @@ jQuery(document).ready(function($) {
             }
         });
     });
+
+    function handleExcelUpload() {
+        const fileInput = document.getElementById('excel_file');
+        const file = fileInput.files[0];
+        
+        if (!file) {
+            alert('Please select a file to upload');
+            return;
+        }
+
+        // Check file type
+        const fileType = file.name.split('.').pop().toLowerCase();
+        if (!['xlsx', 'xls'].includes(fileType)) {
+            alert('Please upload an Excel file (.xlsx or .xls)');
+            return;
+        }
+
+        const formData = new FormData();
+        formData.append('action', 'dekapost_upload_excel');
+        formData.append('nonce', dekapostShipping.nonce);
+        formData.append('excel_file', file);
+
+        // Show loading state
+        const uploadButton = document.getElementById('upload_button');
+        const originalText = uploadButton.textContent;
+        uploadButton.disabled = true;
+        uploadButton.textContent = 'Uploading...';
+
+        jQuery.ajax({
+            url: dekapostShipping.ajaxurl,
+            type: 'POST',
+            data: formData,
+            processData: false,
+            contentType: false,
+            success: function(response) {
+                console.log('Upload response:', response);
+                if (response.success) {
+                    // Store the processed data
+                    window.parcelsData = response.data.parcels;
+                    window.priceData = response.data.data;
+                    
+                    // Show success message
+                    alert(response.data.message || 'File uploaded successfully');
+                    
+                    // Enable save button
+                    document.getElementById('save_button').disabled = false;
+                } else {
+                    console.error('Upload error:', response);
+                    alert(response.data.message || 'Error uploading file');
+                }
+            },
+            error: function(xhr, status, error) {
+                console.error('AJAX error:', {xhr, status, error});
+                alert('Error uploading file: ' + error);
+            },
+            complete: function() {
+                // Reset button state
+                uploadButton.disabled = false;
+                uploadButton.textContent = originalText;
+            }
+        });
+    }
 }); 
