@@ -1,13 +1,23 @@
 jQuery(document).ready(function($) {
+    // Initially hide the contract select box
+    $('#dekapost_contract_id').hide();
+    
     // Handle city selection
     $('#dekapost_city_id').on('change', function() {
         var cityId = $(this).val();
         console.log('City selected:', cityId);
-        if (cityId) {
-            loadContracts(cityId);
-        } else {
-            $('#dekapost_contract_id').html('<option value="">Select a city first</option>');
+        
+        // Hide contract select box if no city is selected
+        if (!cityId) {
+            $('#dekapost_contract_id').hide().html('<option value="">Select a city first</option>');
+            return;
         }
+        
+        // Show loading state
+        $('#dekapost_contract_id').show().html('<option value="">Loading contracts...</option>');
+        
+        // Load contracts for selected city
+        loadContracts(cityId);
     });
 
     // Function to load contracts
@@ -21,19 +31,17 @@ jQuery(document).ready(function($) {
                 nonce: dekapostShipping.nonce,
                 city_id: cityId
             },
-            beforeSend: function() {
-                $('#dekapost_contract_id').html('<option value="">Loading contracts...</option>');
-            },
             success: function(response) {
                 console.log('Raw contracts response:', response);
                 
-                // Check if response is successful and has data
-                if (response.success && response.data) {
+                if (response.success && response.data && response.data.contracts) {
+                    var contracts = response.data.contracts;
+                    console.log('Contracts data:', contracts);
+                    
                     var options = '<option value="">Select a contract</option>';
                     
-                    // Check if data is an array
-                    if (Array.isArray(response.data)) {
-                        response.data.forEach(function(contract) {
+                    if (Array.isArray(contracts)) {
+                        contracts.forEach(function(contract) {
                             console.log('Processing contract:', contract);
                             if (contract && contract.ID && contract.ContractTitle) {
                                 var contractTitle = contract.ContractTitle;
@@ -42,7 +50,7 @@ jQuery(document).ready(function($) {
                             }
                         });
                     } else {
-                        console.error('Response data is not an array:', response.data);
+                        console.error('Contracts data is not an array:', contracts);
                     }
                     
                     // Update the select box with the new options

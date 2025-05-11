@@ -367,7 +367,10 @@ class Dekapost_Admin {
         error_log('API Response for contracts: ' . print_r($response, true));
         
         if ($response['status']) {
-            wp_send_json_success($response['data']);
+            // Ensure we're sending the data in the correct format
+            wp_send_json_success(array(
+                'contracts' => $response['data']
+            ));
         } else {
             wp_send_json_error(array(
                 'message' => $response['message'] ?? 'Failed to get contracts'
