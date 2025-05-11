@@ -43,16 +43,21 @@ if (!defined('ABSPATH')) {
             
             <!-- City Selection -->
             <div class="form-field">
-                <label for="city"><?php echo esc_html__('Select City', 'dekapost-shipping'); ?></label>
-                <select id="city" name="city">
-                    <option value=""><?php echo esc_html__('Select a city', 'dekapost-shipping'); ?></option>
-                    <?php if ($cities && isset($cities['addressData']) && is_array($cities['addressData'])) : ?>
-                        <?php foreach ($cities['addressData'] as $city) : ?>
-                            <option value="<?php echo esc_attr($city['cityID']); ?>">
-                                <?php echo esc_html($city['cityName']); ?>
-                            </option>
-                        <?php endforeach; ?>
-                    <?php endif; ?>
+                <label for="dekapost_city_id">City</label>
+                <select id="dekapost_city_id" name="dekapost_city_id" class="regular-text">
+                    <option value="">Select a city</option>
+                    <?php
+                    if (!empty($cities)) {
+                        foreach ($cities as $city) {
+                            printf(
+                                '<option value="%s" %s>%s</option>',
+                                esc_attr($city['cityID']),
+                                selected(get_option('dekapost_city_id'), $city['cityID'], false),
+                                esc_html($city['cityName'])
+                            );
+                        }
+                    }
+                    ?>
                 </select>
             </div>
 
@@ -120,7 +125,7 @@ if (!defined('ABSPATH')) {
 <script>
 jQuery(document).ready(function($) {
     // City selection change
-    $('#city').on('change', function() {
+    $('#dekapost_city_id').on('change', function() {
         var cityId = $(this).val();
         if (cityId) {
             // Show contract field
@@ -216,7 +221,7 @@ jQuery(document).ready(function($) {
         formData.append('action', 'dekapost_upload_excel');
         formData.append('excel_file', file);
         formData.append('nonce', dekapostShipping.nonce);
-        formData.append('city_id', $('#city').val());
+        formData.append('city_id', $('#dekapost_city_id').val());
         formData.append('contract_id', $('#contract').val());
         formData.append('payment_type_id', $('#payment-type').val());
 

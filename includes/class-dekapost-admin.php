@@ -103,8 +103,16 @@ class Dekapost_Admin {
         // Get settings
         $settings = get_option('dekapost_shipping_settings');
         
-        // Get cities
-        $cities = $this->api->get_cities();
+        // Get cities from API
+        $cities_response = $this->api->get_cities();
+        
+        if ($cities_response['status'] && !empty($cities_response['data']['addressData'])) {
+            // Store cities in WordPress options
+            update_option('dekapost_cities', $cities_response['data']['addressData']);
+            $cities = $cities_response['data']['addressData'];
+        } else {
+            $cities = array();
+        }
         
         // Get contract properties
         $contracts = $this->api->get_contracts(0); // Default to 0 for initial load

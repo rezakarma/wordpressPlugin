@@ -84,7 +84,8 @@ class Dekapost_API {
             'method' => $method,
             'headers' => array(
                 'Authorization' => 'Bearer ' . $token,
-                'Content-Type' => 'application/json'
+                'Content-Type' => 'application/json',
+                'Referer' => 'https://services.dekapost.ir/'
             )
         );
 
@@ -117,33 +118,7 @@ class Dekapost_API {
             );
         }
 
-        $response = wp_remote_get($this->api_url . '/contracts/' . $city_id, array(
-            'headers' => array(
-                'Authorization' => 'Bearer ' . $this->token
-            )
-        ));
-
-        if (is_wp_error($response)) {
-            return array(
-                'status' => false,
-                'message' => $response->get_error_message()
-            );
-        }
-
-        $body = wp_remote_retrieve_body($response);
-        $data = json_decode($body, true);
-
-        if (wp_remote_retrieve_response_code($response) !== 200) {
-            return array(
-                'status' => false,
-                'message' => isset($data['message']) ? $data['message'] : 'Failed to get contracts'
-            );
-        }
-
-        return array(
-            'status' => true,
-            'data' => $data
-        );
+        return $this->make_request('/contracts/' . $city_id);
     }
 
     public function calculate_price($parcels_data) {
