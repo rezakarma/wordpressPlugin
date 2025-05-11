@@ -3,9 +3,13 @@ jQuery(document).ready(function($) {
     $('#dekapost_city_id').on('change', function() {
         var cityId = $(this).val();
         if (cityId) {
+            // Show contract field and load contracts
+            $('#dekapost_contract_id').prop('disabled', false);
             loadContracts(cityId);
         } else {
-            $('#dekapost_contract_id').html('<option value="">Select a city first</option>');
+            // Hide and reset contract field
+            $('#dekapost_contract_id').prop('disabled', true)
+                .html('<option value="">Select a city first</option>');
         }
     });
 
@@ -23,6 +27,7 @@ jQuery(document).ready(function($) {
                 $('#dekapost_contract_id').html('<option value="">Loading contracts...</option>');
             },
             success: function(response) {
+                console.log('Contracts response:', response);
                 if (response.success && response.data) {
                     var options = '<option value="">Select a contract</option>';
                     response.data.forEach(function(contract) {
@@ -31,9 +36,13 @@ jQuery(document).ready(function($) {
                     $('#dekapost_contract_id').html(options);
                 } else {
                     $('#dekapost_contract_id').html('<option value="">No contracts found</option>');
+                    if (response.data && response.data.message) {
+                        console.error('Contract loading error:', response.data.message);
+                    }
                 }
             },
-            error: function() {
+            error: function(xhr, status, error) {
+                console.error('Contract loading error:', {xhr, status, error});
                 $('#dekapost_contract_id').html('<option value="">Error loading contracts</option>');
             }
         });
@@ -45,6 +54,18 @@ jQuery(document).ready(function($) {
         
         const fileInput = document.getElementById('excel_file');
         const file = fileInput.files[0];
+        const cityId = $('#dekapost_city_id').val();
+        const contractId = $('#dekapost_contract_id').val();
+        
+        if (!cityId) {
+            alert('Please select a city first');
+            return;
+        }
+
+        if (!contractId) {
+            alert('Please select a contract');
+            return;
+        }
         
         if (!file) {
             alert('Please select a file to upload');
@@ -62,6 +83,8 @@ jQuery(document).ready(function($) {
         formData.append('action', 'dekapost_upload_excel');
         formData.append('nonce', dekapostShipping.nonce);
         formData.append('excel_file', file);
+        formData.append('city_id', cityId);
+        formData.append('contract_id', contractId);
 
         // Show loading state
         const uploadButton = document.getElementById('upload_button');
