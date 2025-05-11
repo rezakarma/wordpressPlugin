@@ -78,6 +78,9 @@ if (!defined('ABSPATH')) {
                 <button type="button" class="button" id="upload-excel">
                     <?php echo esc_html__('Upload and Calculate', 'dekapost-shipping'); ?>
                 </button>
+                <p class="description">
+                    <?php echo esc_html__('Upload an Excel file with parcel information. The file should contain columns for weight, source city, destination city, and content amount.', 'dekapost-shipping'); ?>
+                </p>
             </div>
 
             <!-- Results Table -->
