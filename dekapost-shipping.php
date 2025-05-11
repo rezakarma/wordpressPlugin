@@ -23,30 +23,45 @@ define('DEKAPOST_SHIPPING_VERSION', '1.0.0');
 define('DEKAPOST_SHIPPING_PLUGIN_DIR', plugin_dir_path(__FILE__));
 define('DEKAPOST_SHIPPING_PLUGIN_URL', plugin_dir_url(__FILE__));
 
-// Include required files
-require_once DEKAPOST_SHIPPING_PLUGIN_DIR . 'includes/class-dekapost-shipping.php';
-require_once DEKAPOST_SHIPPING_PLUGIN_DIR . 'includes/class-dekapost-api.php';
-require_once DEKAPOST_SHIPPING_PLUGIN_DIR . 'includes/class-dekapost-shipping-method.php';
-
-// Initialize the plugin
-function dekapost_shipping_init() {
+// Check if WooCommerce is active
+function dekapost_shipping_check_woocommerce() {
     if (!class_exists('WooCommerce')) {
         add_action('admin_notices', function() {
             echo '<div class="error"><p>' . 
                  __('Dekapost Shipping requires WooCommerce to be installed and active.', 'dekapost-shipping') . 
                  '</p></div>';
         });
+        return false;
+    }
+    return true;
+}
+
+// Initialize the plugin
+function dekapost_shipping_init() {
+    if (!dekapost_shipping_check_woocommerce()) {
         return;
     }
+
+    // Include required files
+    require_once DEKAPOST_SHIPPING_PLUGIN_DIR . 'includes/class-dekapost-api.php';
+    require_once DEKAPOST_SHIPPING_PLUGIN_DIR . 'includes/class-dekapost-shipping.php';
+    require_once DEKAPOST_SHIPPING_PLUGIN_DIR . 'includes/class-dekapost-shipping-method.php';
 
     // Initialize the main plugin class
     new Dekapost_Shipping();
 }
+
+// Hook into WordPress
 add_action('plugins_loaded', 'dekapost_shipping_init');
 
 // Activation hook
 register_activation_hook(__FILE__, 'dekapost_shipping_activate');
 function dekapost_shipping_activate() {
+    if (!dekapost_shipping_check_woocommerce()) {
+        deactivate_plugins(plugin_basename(__FILE__));
+        wp_die(__('Dekapost Shipping requires WooCommerce to be installed and active.', 'dekapost-shipping'));
+    }
+
     // Create necessary database tables and options
     add_option('dekapost_shipping_settings', array(
         'api_username' => '',

@@ -4,6 +4,11 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
+// Check if WooCommerce is active
+if (!class_exists('WC_Shipping_Method')) {
+    return;
+}
+
 class Dekapost_Shipping_Method extends WC_Shipping_Method {
     private $api;
 
