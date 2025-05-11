@@ -43,7 +43,10 @@ class Dekapost_API {
             }
 
             $response = wp_remote_post($this->api_url . '/token', array(
-                'headers' => array('Content-Type' => 'application/json'),
+                'headers' => array(
+                    'Content-Type' => 'application/json',
+                    'Referer' => 'https://services.dekapost.ir/'
+                ),
                 'body' => json_encode(array(
                     'username' => $settings['api_username'],
                     'password' => $settings['api_password']
@@ -54,16 +57,15 @@ class Dekapost_API {
                 return false;
             }
 
-            $body = wp_remote_retrieve_body($response);
-            if (!empty($body)) {
-                // Decode JWT to get expiry
-                $token_parts = explode('.', $body);
-                if (count($token_parts) === 3) {
-                    $payload = json_decode(base64_decode($token_parts[1]), true);
-                    if (isset($payload['exp'])) {
-                        $this->save_token($body, $payload['exp']);
-                        return $body;
-                    }
+            $response_code = wp_remote_retrieve_response_code($response);
+            if ($response_code === 200) {
+                $token = wp_remote_retrieve_body($response);
+                // Token is returned as a plain string, not JSON
+                if (!empty($token)) {
+                    // Set token expiry to 24 hours from now
+                    $expiry = time() + (24 * 60 * 60);
+                    $this->save_token($token, $expiry);
+                    return $token;
                 }
             }
             return false;
@@ -130,31 +132,66 @@ class Dekapost_API {
             );
         }
 
+        $response_code = wp_remote_retrieve_response_code($response);
         $body = wp_remote_retrieve_body($response);
         $data = json_decode($body, true);
 
-        if (wp_remote_retrieve_response_code($response) !== 200) {
+        if ($response_code === 200 && isset($data['status']) && $data['status'] === true) {
             return array(
-                'status' => false,
-                'message' => isset($data['message']) ? $data['message'] : 'Failed to get cities'
+                'status' => true,
+                'data' => $data
             );
         }
 
         return array(
-            'status' => true,
-            'data' => $data
+            'status' => false,
+            'message' => isset($data['message']) ? $data['message'] : 'Failed to get cities'
         );
     }
 
     public function get_contracts($city_id) {
-        if (!$this->is_token_valid()) {
+        // First ensure we have a valid token
+        $token = $this->get_token();
+        if (!$token) {
             return array(
                 'status' => false,
-                'message' => 'Not logged in'
+                'message' => 'Authentication failed. Please check your credentials.'
             );
         }
 
-        return $this->make_request('/contracts/' . $city_id);
+        $response = wp_remote_get($this->api_url . '/GetContractPropertiesNodes', array(
+            'headers' => array(
+                'Authorization' => 'Bearer ' . $token,
+                'Referer' => 'https://services.dekapost.ir/',
+                'Content-Type' => 'application/json'
+            ),
+            'body' => json_encode(array(
+                'cityID' => intval($city_id)
+            ))
+        ));
+
+        if (is_wp_error($response)) {
+            return array(
+                'status' => false,
+                'message' => $response->get_error_message()
+            );
+        }
+
+        $response_code = wp_remote_retrieve_response_code($response);
+        $body = wp_remote_retrieve_body($response);
+        $data = json_decode($body, true);
+
+        if ($response_code === 200 && isset($data['status']) && $data['status'] === true) {
+            return array(
+                'status' => true,
+                'data' => $data
+            );
+        }
+
+        return array(
+            'status' => false,
+            'message' => isset($data['message']) ? $data['message'] : 'Failed to get contracts'
+        );
     }
 
     public function calculate_price($parcels_data) {
