@@ -159,7 +159,7 @@ class Dekapost_API {
             );
         }
 
-        $response = wp_remote_get($this->api_url . '/GetContractPropertiesNodes', array(
+        $response = wp_remote_post($this->api_url . '/GetContractPropertiesNodes', array(
             'headers' => array(
                 'Authorization' => 'Bearer ' . $token,
                 'Referer' => 'https://services.dekapost.ir/',
