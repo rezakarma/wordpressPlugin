@@ -42,10 +42,7 @@ jQuery(document).ready(function($) {
     // Handle Excel file upload
     $('#upload_button').on('click', function(e) {
         e.preventDefault();
-        handleExcelUpload();
-    });
-
-    function handleExcelUpload() {
+        
         const fileInput = document.getElementById('excel_file');
         const file = fileInput.files[0];
         
@@ -105,7 +102,7 @@ jQuery(document).ready(function($) {
                 uploadButton.textContent = originalText;
             }
         });
-    }
+    });
 
     // Handle saving parcels
     $('#save_button').on('click', function() {

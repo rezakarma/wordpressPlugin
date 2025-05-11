@@ -55,14 +55,17 @@ if (!defined('ABSPATH')) {
                             foreach ($cities as $city) {
                                 printf(
                                     '<option value="%s">%s - %s</option>',
-                                    esc_attr($city['id']),
-                                    esc_html($city['name']),
+                                    esc_attr($city['cityID']),
+                                    esc_html($city['cityName']),
                                     esc_html($city['stateName'])
                                 );
                             }
                         }
                         ?>
                     </select>
+                    <?php if (empty($cities)): ?>
+                        <p class="description"><?php _e('No cities available. Please check your API credentials.', 'dekapost-shipping'); ?></p>
+                    <?php endif; ?>
                 </div>
 
                 <div class="form-group">
