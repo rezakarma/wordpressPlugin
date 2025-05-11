@@ -1,0 +1,94 @@
+.dekapost-shipping-container {
+    margin: 20px 0;
+}
+
+.dekapost-section {
+    background: #fff;
+    padding: 20px;
+    margin-bottom: 20px;
+    border: 1px solid #ccd0d4;
+    box-shadow: 0 1px 1px rgba(0,0,0,.04);
+}
+
+.dekapost-section h2 {
+    margin-top: 0;
+    padding-bottom: 12px;
+    border-bottom: 1px solid #eee;
+}
+
+.form-field {
+    margin-bottom: 15px;
+}
+
+.form-field label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: 600;
+}
+
+.form-field select,
+.form-field input[type="text"],
+.form-field input[type="password"] {
+    width: 100%;
+    max-width: 400px;
+}
+
+.results-table-container {
+    margin-top: 20px;
+}
+
+.results-table-container table {
+    margin-top: 10px;
+}
+
+.check-column {
+    width: 30px;
+}
+
+.submit-buttons {
+    margin-top: 15px;
+    padding-top: 15px;
+    border-top: 1px solid #eee;
+}
+
+.submit-buttons .button {
+    margin-right: 10px;
+}
+
+/* Loading state */
+.loading {
+    position: relative;
+    pointer-events: none;
+    opacity: 0.7;
+}
+
+.loading:after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 20px;
+    height: 20px;
+    margin: -10px 0 0 -10px;
+    border: 2px solid #f3f3f3;
+    border-top: 2px solid #3498db;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* Error messages */
+.error-message {
+    color: #dc3232;
+    margin: 5px 0;
+}
+
+/* Success messages */
+.success-message {
+    color: #46b450;
+    margin: 5px 0;
+} 
