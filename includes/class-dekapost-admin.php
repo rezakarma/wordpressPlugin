@@ -362,6 +362,8 @@ class Dekapost_Admin {
 
         $response = $this->api->get_contracts($city_id);
         
+        error_log('Contracts Response: ' . print_r($response, true));
+        
         if ($response['status']) {
             wp_send_json_success($response['data']);
         } else {

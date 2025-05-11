@@ -181,6 +181,8 @@ class Dekapost_API {
         $body = wp_remote_retrieve_body($response);
         $data = json_decode($body, true);
 
+        error_log('Contract API Response: ' . print_r($data, true));
+
         if ($response_code === 200 && isset($data['status']) && $data['status'] === 1) {
             return array(
                 'status' => true,

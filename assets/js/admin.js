@@ -26,12 +26,17 @@ jQuery(document).ready(function($) {
                 console.log('Contracts response:', response);
                 if (response.success && response.data) {
                     var options = '<option value="">Select a contract</option>';
-                    response.data.forEach(function(contract) {
-                        options += '<option value="' + contract.ID + '">' + contract.ContractTitle + '</option>';
-                    });
+                    if (Array.isArray(response.data)) {
+                        response.data.forEach(function(contract) {
+                            options += '<option value="' + contract.ID + '">' + contract.ContractTitle + '</option>';
+                        });
+                    }
                     $('#dekapost_contract_id').html(options);
                 } else {
                     $('#dekapost_contract_id').html('<option value="">No contracts found</option>');
+                    if (response.data && response.data.message) {
+                        console.error('Contract loading error:', response.data.message);
+                    }
                 }
             },
             error: function(xhr, status, error) {
