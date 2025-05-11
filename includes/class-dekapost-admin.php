@@ -116,29 +116,143 @@ class Dekapost_Admin {
         check_ajax_referer('dekapost-shipping-nonce', 'nonce');
 
         if (!current_user_can('manage_options')) {
-            wp_send_json_error('Unauthorized');
+            wp_send_json_error(array(
+                'message' => 'Unauthorized access'
+            ));
         }
 
         if (!isset($_FILES['excel_file'])) {
-            wp_send_json_error('No file uploaded');
+            wp_send_json_error(array(
+                'message' => 'No file uploaded'
+            ));
         }
 
         $file = $_FILES['excel_file'];
         
-        // Process Excel file and prepare data for API
-        // This is a placeholder - you'll need to implement Excel processing
-        $parcels_data = array(
-            'isContract' => true,
-            '_GetPriceWithList_IPList' => array()
-        );
+        // Check file type
+        $file_type = wp_check_filetype($file['name']);
+        if (!in_array($file_type['ext'], array('xlsx', 'xls'))) {
+            wp_send_json_error(array(
+                'message' => 'Invalid file type. Please upload an Excel file (.xlsx or .xls)'
+            ));
+        }
 
-        // Calculate price
-        $response = $this->api->calculate_price($parcels_data);
-        
-        if ($response) {
-            wp_send_json_success($response);
-        } else {
-            wp_send_json_error('Failed to calculate price');
+        // Load PhpSpreadsheet
+        require_once DEKAPOST_SHIPPING_PLUGIN_DIR . 'vendor/autoload.php';
+
+        try {
+            $spreadsheet = \PhpOffice\PhpSpreadsheet\IOFactory::load($file['tmp_name']);
+            $worksheet = $spreadsheet->getActiveSheet();
+            $data = $worksheet->toArray();
+
+            // Get header row
+            $headers = array_shift($data);
+
+            // Define the expected column order
+            $expected_columns = array(
+                'sourceCity',
+                'sourceCityID',
+                'destCity',
+                'destCityID',
+                'stateName',
+                'parcelType',
+                'parcelTypeID',
+                'boxID',
+                'boxLength',
+                'boxWidth',
+                'boxHeight',
+                'lstSideServices',
+                'sideServiceID',
+                'contents',
+                'contentAmount',
+                'weight',
+                'customerHasBox',
+                'needPacking',
+                'sendPlaceFlag',
+                'receiverFirstName',
+                'receiverLastName',
+                'receiverNID',
+                'receiverMobile',
+                'receiverPhone',
+                'receiverZone',
+                'receiverStreet',
+                'receiverAddress',
+                'receiverPostalCode',
+                'senderFirstName',
+                'senderLastName',
+                'senderNID',
+                'senderMobile',
+                'senderPhone',
+                'senderZone',
+                'senderStreet',
+                'senderAddress',
+                'senderPostalCode',
+                'serialNo'
+            );
+
+            // Process data
+            $parcels_data = array();
+            foreach ($data as $row) {
+                $parcel = array();
+                foreach ($expected_columns as $index => $column) {
+                    $parcel[$column] = $row[$index] ?? '';
+                }
+                $parcels_data[] = $parcel;
+            }
+
+            // Process data for API
+            $processed_data = $this->api->process_excel_data($parcels_data);
+
+            // Calculate price
+            $price_data = array(
+                'isContract' => true,
+                '_GetPriceWithList_IPList' => array_map(function($parcel) {
+                    return array(
+                        'appTypeID' => 3,
+                        'uniqueID' => 0,
+                        'serviceID' => 4,
+                        'weight' => intval($parcel['weight']),
+                        'parcelTypeID' => intval($parcel['parcelTypeID']),
+                        'sourceCityID' => intval($parcel['sourceCityID']),
+                        'destCityID' => intval($parcel['destCityID']),
+                        'sideServicesIDs' => array(
+                            array('sideServiceID' => intval($parcel['sideServiceID']))
+                        ),
+                        'tlS_ID' => 1,
+                        'contentAmount' => $parcel['contentAmount'],
+                        'outsizeFlag' => 0,
+                        'boxID' => intval($parcel['boxID']),
+                        'customerHasBox' => intval($parcel['customerHasBox']),
+                        'needPacking' => intval($parcel['needPacking']),
+                        'boxLength' => intval($parcel['boxLength']),
+                        'boxWidth' => intval($parcel['boxWidth']),
+                        'boxHeight' => intval($parcel['boxHeight']),
+                        'quantity' => 1,
+                        'sendPlaceFlag' => intval($parcel['sendPlaceFlag']),
+                        'payTypeID' => 1,
+                        'contractID' => intval($parcel['contractID']),
+                        'sameSenderReceiver' => 0
+                    );
+                }, $processed_data)
+            );
+
+            $response = $this->api->calculate_price($price_data);
+            
+            if ($response['status']) {
+                wp_send_json_success(array(
+                    'message' => $response['message'],
+                    'data' => $response['data'],
+                    'parcels' => $processed_data
+                ));
+            } else {
+                wp_send_json_error(array(
+                    'message' => $response['message'] ?? 'Failed to calculate price'
+                ));
+            }
+        } catch (Exception $e) {
+            wp_send_json_error(array(
+                'message' => 'Error processing Excel file: ' . $e->getMessage()
+            ));
         }
     }
 
@@ -146,21 +260,30 @@ class Dekapost_Admin {
         check_ajax_referer('dekapost-shipping-nonce', 'nonce');
 
         if (!current_user_can('manage_options')) {
-            wp_send_json_error('Unauthorized');
+            wp_send_json_error(array(
+                'message' => 'Unauthorized access'
+            ));
         }
 
         $parcels_data = json_decode(stripslashes($_POST['parcels_data']), true);
         
         if (!$parcels_data) {
-            wp_send_json_error('Invalid parcels data');
+            wp_send_json_error(array(
+                'message' => 'Invalid parcels data'
+            ));
         }
 
         $response = $this->api->save_parcels($parcels_data);
         
-        if ($response) {
-            wp_send_json_success($response);
+        if ($response['status']) {
+            wp_send_json_success(array(
+                'message' => $response['message'],
+                'data' => $response['data']
+            ));
         } else {
-            wp_send_json_error('Failed to save parcels');
+            wp_send_json_error(array(
+                'message' => $response['message'] ?? 'Failed to save parcels'
+            ));
         }
     }
 } 

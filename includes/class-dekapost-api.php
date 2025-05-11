@@ -74,7 +74,10 @@ class Dekapost_API {
     private function make_request($endpoint, $method = 'GET', $data = null) {
         $token = $this->get_token();
         if (!$token) {
-            return false;
+            return array(
+                'status' => false,
+                'message' => 'Authentication failed. Please check your credentials.'
+            );
         }
 
         $args = array(
@@ -92,26 +95,111 @@ class Dekapost_API {
         $response = wp_remote_request($this->api_url . $endpoint, $args);
 
         if (is_wp_error($response)) {
-            return false;
+            return array(
+                'status' => false,
+                'message' => $response->get_error_message()
+            );
         }
 
         $body = json_decode(wp_remote_retrieve_body($response), true);
+        
+        // Check if response contains error message
+        if (isset($body['message']) && !empty($body['message'])) {
+            return array(
+                'status' => isset($body['status']) ? $body['status'] : false,
+                'message' => $body['message'],
+                'data' => isset($body['data']) ? $body['data'] : null
+            );
+        }
+
         return $body;
     }
 
-    public function get_states() {
-        return $this->make_request('/states');
+    public function get_cities() {
+        return $this->make_request('/GetCityForContract');
     }
 
-    public function get_contract_properties() {
-        return $this->make_request('/contracts');
+    public function get_contracts($city_id) {
+        return $this->make_request('/GetContractPropertiesNodes', 'POST', array(
+            'cityID' => intval($city_id)
+        ));
     }
 
     public function calculate_price($parcels_data) {
-        return $this->make_request('/calculate-price', 'POST', $parcels_data);
+        return $this->make_request('/GetPriceWithList', 'POST', $parcels_data);
     }
 
     public function save_parcels($parcels_data) {
-        return $this->make_request('/save-parcels', 'POST', $parcels_data);
+        return $this->make_request('/api/Parcels/SaveParcels', 'POST', $parcels_data);
+    }
+
+    public function process_excel_data($excel_data) {
+        $parcels = array();
+        
+        foreach ($excel_data as $row) {
+            $parcel = array(
+                'companyID' => 0,
+                'serviceID' => 4,
+                'serviceType' => 2,
+                'contractID' => intval($row['contractID'] ?? 0),
+                'parcelTypeID' => intval($row['parcelTypeID'] ?? 0),
+                'sourcePostNodeID' => 0,
+                'userID' => 0,
+                'destCityID' => strval($row['destCityID'] ?? ''),
+                'serialNo' => strval($row['serialNo'] ?? ''),
+                'senderFirstName' => strval($row['senderFirstName'] ?? ''),
+                'senderLastName' => strval($row['senderLastName'] ?? ''),
+                'senderAddress' => strval($row['senderAddress'] ?? ''),
+                'senderNID' => strval($row['senderNID'] ?? ''),
+                'senderPhone' => strval($row['senderPhone'] ?? ''),
+                'senderMobile' => strval($row['senderMobile'] ?? ''),
+                'senderPostalCode' => strval($row['senderPostalCode'] ?? ''),
+                'senderStreet' => strval($row['senderStreet'] ?? ''),
+                'senderZone' => strval($row['senderZone'] ?? ''),
+                'receiverStreet' => strval($row['receiverStreet'] ?? ''),
+                'receiverZone' => strval($row['receiverZone'] ?? ''),
+                'receiverFirstName' => strval($row['receiverFirstName'] ?? ''),
+                'receiverLastName' => strval($row['receiverLastName'] ?? ''),
+                'receiverAddress' => strval($row['receiverAddress'] ?? ''),
+                'receiverNID' => strval($row['receiverNID'] ?? ''),
+                'receiverPhone' => strval($row['receiverPhone'] ?? ''),
+                'receiverMobile' => strval($row['receiverMobile'] ?? ''),
+                'receiverPostalCode' => strval($row['receiverPostalCode'] ?? ''),
+                'weight' => intval($row['weight'] ?? 0),
+                'length' => intval($row['boxLength'] ?? 0),
+                'width' => intval($row['boxWidth'] ?? 0),
+                'height' => intval($row['boxHeight'] ?? 0),
+                'contentAmount' => strval($row['contentAmount'] ?? ''),
+                'tlsID' => 1,
+                'lstSideServices' => array(
+                    array('sideServiceID' => intval($row['sideServiceID'] ?? 0))
+                ),
+                'boxID' => intval($row['boxID'] ?? 0),
+                'outsizeFlag' => 0,
+                'contents' => strval($row['contents'] ?? ''),
+                'paymentDate' => '',
+                'sourceID' => 1,
+                'sendPlaceFlag' => intval($row['sendPlaceFlag'] ?? 0),
+                'paymentTypeID' => 1,
+                'customerHasBox' => intval($row['customerHasBox'] ?? 0),
+                'needPacking' => intval($row['needPacking'] ?? 0),
+                'appID' => 1,
+                'lat' => '35.707401',
+                'lon' => '51.369683',
+                'characterType' => 1,
+                'sameSenderReceiver' => 0,
+                'clubUserID' => 0,
+                'sourceCityID' => intval($row['sourceCityID'] ?? 0),
+                'receiverCustomerCode' => '',
+                'senderLockerID' => '',
+                'receiverLockerID' => '',
+                'suggestedDateTime' => '',
+                'parcelID' => 0
+            );
+            
+            $parcels[] = $parcel;
+        }
+        
+        return $parcels;
     }
 } 

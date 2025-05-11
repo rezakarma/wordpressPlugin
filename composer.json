@@ -1,0 +1,14 @@
+{
+    "name": "dekapost/shipping",
+    "description": "Dekapost shipping management system",
+    "type": "wordpress-plugin",
+    "require": {
+        "php": ">=7.2",
+        "phpoffice/phpspreadsheet": "^1.29"
+    },
+    "autoload": {
+        "psr-4": {
+            "Dekapost\\Shipping\\": "includes/"
+        }
+    }
+} 
