@@ -162,59 +162,55 @@ class Dekapost_Admin {
             $worksheet = $spreadsheet->getActiveSheet();
             $data = $worksheet->toArray();
 
-            // Get header row
-            $headers = array_shift($data);
-
-            // Define the expected column order
-            $expected_columns = array(
-                'sourceCity',
-                'sourceCityID',
-                'destCity',
-                'destCityID',
-                'stateName',
-                'parcelType',
-                'parcelTypeID',
-                'boxID',
-                'boxLength',
-                'boxWidth',
-                'boxHeight',
-                'lstSideServices',
-                'sideServiceID',
-                'contents',
-                'contentAmount',
-                'weight',
-                'customerHasBox',
-                'needPacking',
-                'sendPlaceFlag',
-                'receiverFirstName',
-                'receiverLastName',
-                'receiverNID',
-                'receiverMobile',
-                'receiverPhone',
-                'receiverZone',
-                'receiverStreet',
-                'receiverAddress',
-                'receiverPostalCode',
-                'senderFirstName',
-                'senderLastName',
-                'senderNID',
-                'senderMobile',
-                'senderPhone',
-                'senderZone',
-                'senderStreet',
-                'senderAddress',
-                'senderPostalCode',
-                'serialNo'
-            );
-
-            // Process data
+            // Skip header row and process data
+            array_shift($data);
+            
+            // Process data based on column order
             $parcels_data = array();
             foreach ($data as $row) {
-                $parcel = array();
-                foreach ($expected_columns as $index => $column) {
-                    $parcel[$column] = $row[$index] ?? '';
+                if (count($row) >= 6) { // Ensure we have enough columns
+                    $parcel = array(
+                        'sourceCity' => $row[0] ?? '',
+                        'sourceCityID' => $row[1] ?? '',
+                        'destCity' => $row[2] ?? '',
+                        'destCityID' => $row[3] ?? '',
+                        'stateName' => $row[4] ?? '',
+                        'parcelType' => $row[5] ?? '',
+                        'parcelTypeID' => $row[6] ?? '',
+                        'boxID' => $row[7] ?? '',
+                        'boxLength' => $row[8] ?? '',
+                        'boxWidth' => $row[9] ?? '',
+                        'boxHeight' => $row[10] ?? '',
+                        'lstSideServices' => $row[11] ?? '',
+                        'sideServiceID' => $row[12] ?? '',
+                        'contents' => $row[13] ?? '',
+                        'contentAmount' => $row[14] ?? '',
+                        'weight' => $row[15] ?? '',
+                        'customerHasBox' => $row[16] ?? '',
+                        'needPacking' => $row[17] ?? '',
+                        'sendPlaceFlag' => $row[18] ?? '',
+                        'receiverFirstName' => $row[19] ?? '',
+                        'receiverLastName' => $row[20] ?? '',
+                        'receiverNID' => $row[21] ?? '',
+                        'receiverMobile' => $row[22] ?? '',
+                        'receiverPhone' => $row[23] ?? '',
+                        'receiverZone' => $row[24] ?? '',
+                        'receiverStreet' => $row[25] ?? '',
+                        'receiverAddress' => $row[26] ?? '',
+                        'receiverPostalCode' => $row[27] ?? '',
+                        'senderFirstName' => $row[28] ?? '',
+                        'senderLastName' => $row[29] ?? '',
+                        'senderNID' => $row[30] ?? '',
+                        'senderMobile' => $row[31] ?? '',
+                        'senderPhone' => $row[32] ?? '',
+                        'senderZone' => $row[33] ?? '',
+                        'senderStreet' => $row[34] ?? '',
+                        'senderAddress' => $row[35] ?? '',
+                        'senderPostalCode' => $row[36] ?? '',
+                        'serialNo' => $row[37] ?? ''
+                    );
+                    $parcels_data[] = $parcel;
                 }
-                $parcels_data[] = $parcel;
             }
 
             // Process data for API
