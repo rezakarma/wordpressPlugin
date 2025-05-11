@@ -159,6 +159,9 @@ class Dekapost_API {
             );
         }
 
+        error_log('Getting contracts for city ID: ' . $city_id);
+        error_log('Using token: ' . $token);
+
         $response = wp_remote_post($this->api_url . '/GetContractPropertiesNodes', array(
             'headers' => array(
                 'Authorization' => 'Bearer ' . $token,
@@ -171,6 +174,7 @@ class Dekapost_API {
         ));
 
         if (is_wp_error($response)) {
+            error_log('Contract API Error: ' . $response->get_error_message());
             return array(
                 'status' => false,
                 'message' => $response->get_error_message()
@@ -181,7 +185,8 @@ class Dekapost_API {
         $body = wp_remote_retrieve_body($response);
         $data = json_decode($body, true);
 
-        error_log('Contract API Response: ' . print_r($data, true));
+        error_log('Contract API Response Code: ' . $response_code);
+        error_log('Contract API Response Body: ' . $body);
 
         if ($response_code === 200 && isset($data['status']) && $data['status'] === 1) {
             return array(

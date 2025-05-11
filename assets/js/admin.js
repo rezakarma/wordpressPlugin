@@ -2,6 +2,7 @@ jQuery(document).ready(function($) {
     // Handle city selection
     $('#dekapost_city_id').on('change', function() {
         var cityId = $(this).val();
+        console.log('City selected:', cityId);
         if (cityId) {
             loadContracts(cityId);
         } else {
@@ -11,6 +12,7 @@ jQuery(document).ready(function($) {
 
     // Function to load contracts
     function loadContracts(cityId) {
+        console.log('Loading contracts for city:', cityId);
         $.ajax({
             url: dekapostShipping.ajaxurl,
             type: 'POST',
@@ -23,22 +25,32 @@ jQuery(document).ready(function($) {
                 $('#dekapost_contract_id').html('<option value="">Loading contracts...</option>');
             },
             success: function(response) {
-                console.log('Contracts response:', response);
+                console.log('Raw contracts response:', response);
+                
+                // Check if response is successful and has data
                 if (response.success && response.data) {
                     var options = '<option value="">Select a contract</option>';
+                    
+                    // Check if data is an array
                     if (Array.isArray(response.data)) {
                         response.data.forEach(function(contract) {
-                            // Decode the Persian text
-                            var contractTitle = decodeURIComponent(escape(contract.ContractTitle));
-                            options += '<option value="' + contract.ID + '">' + contractTitle + ' - ' + contract.ServiceName + '</option>';
+                            console.log('Processing contract:', contract);
+                            if (contract && contract.ID && contract.ContractTitle) {
+                                var contractTitle = contract.ContractTitle;
+                                var serviceName = contract.ServiceName || '';
+                                options += '<option value="' + contract.ID + '">' + contractTitle + ' - ' + serviceName + '</option>';
+                            }
                         });
+                    } else {
+                        console.error('Response data is not an array:', response.data);
                     }
+                    
+                    // Update the select box with the new options
                     $('#dekapost_contract_id').html(options);
+                    console.log('Updated contract select box with options:', options);
                 } else {
+                    console.error('Invalid response:', response);
                     $('#dekapost_contract_id').html('<option value="">No contracts found</option>');
-                    if (response.data && response.data.message) {
-                        console.error('Contract loading error:', response.data.message);
-                    }
                 }
             },
             error: function(xhr, status, error) {

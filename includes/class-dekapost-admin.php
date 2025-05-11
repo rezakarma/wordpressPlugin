@@ -360,9 +360,11 @@ class Dekapost_Admin {
             ));
         }
 
+        error_log('AJAX Request - Getting contracts for city ID: ' . $city_id);
+
         $response = $this->api->get_contracts($city_id);
         
-        error_log('Contracts Response: ' . print_r($response, true));
+        error_log('API Response for contracts: ' . print_r($response, true));
         
         if ($response['status']) {
             wp_send_json_success($response['data']);
